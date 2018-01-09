@@ -1,21 +1,17 @@
+# https://medium.com/table-xi/stream-csv-files-in-rails-because-you-can-46c212159ab7
+# https://blog.clearbit.com/rack-csv-streaming/
+# https://gist.github.com/CMCDragonkai/6bfade6431e9ffb7fe88
 class ContactsController < ApplicationController
   def index
     respond_to do |format|
       format.csv do
-        self.response_body = enumthingy
+        headers["X-Accel-Buffering"] = "no" # https://www.nginx.com/resources/wiki/start/topics/examples/x-accel/#x-accel-buffering
+				headers["Cache-Control"] = "no-cache" # if Cache-Control is set to anything but "no-cache" streaming does not occur
+        self.response_body = Enumerator.new do |yielder|
+          Contact.csv_header(yielder)
+          Contact.csv_rows(yielder)
+        end
       end
     end
   end
-
-  private
-
-  def enumthingy
-    Enumerator.new do |stream|
-      10.times do |x|
-        sleep 0.1
-        stream << x.to_s
-      end
-    end
-  end
-
 end
